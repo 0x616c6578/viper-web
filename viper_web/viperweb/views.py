@@ -416,6 +416,12 @@ class FileView(LoginRequiredMixin, TemplateView):
                                   'body': note.body,
                                   'id': note.id})
 
+        analysis_history = []
+        analysis_list = malware_obj.analysis
+        if analysis_list:
+            for item in analysis_list:
+                analysis_history.append({'id': item.id, 'cmd_line': item.cmd_line, 'results': item.results})
+
         module_history = []
         analysis_list = malware_obj.analysis
         if analysis_list:
@@ -423,11 +429,13 @@ class FileView(LoginRequiredMixin, TemplateView):
                 module_history.append({'id': item.id,
                                        'cmd_line': item.cmd_line})
 
+        
         tag_list = db.list_tags_for_malware(sha256)
         children = db.list_children(malware_obj.id)
         parent = db.get_parent(malware_obj.id)
 
         return render(request, template_name, {'malware': malware_obj,
+                                                'analysis_history': analysis_history,
                                                'note_list': note_list,
                                                'tag_list': tag_list,
                                                'children': children,
@@ -729,6 +737,7 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
+    # TODO(alex): Rewrite to use new Database().find function (which searches all dbs)
     def post(self, request, *args, **kwargs):
         template_name = "viperweb/search_result.html"
         key = request.POST.get('key')

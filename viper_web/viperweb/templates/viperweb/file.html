@@ -17,6 +17,9 @@
             <a class="nav-link active" id="nav-static-tab" data-toggle="tab" href="#nav-static" role="tab" aria-controls="nav-static" aria-selected="true">Sample Info</a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" id="nav-analysis-tab" data-toggle="tab" href="#nav-analysis" role="tab" aria-controls="nav-analysis" aria-selected="false">Analysis History</a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" id="nav-notes-tab" data-toggle="tab" href="#nav-notes" role="tab" aria-controls="nav-notes" aria-selected="false">Notes</a>
         </li>
         <li class="nav-item">
@@ -201,6 +204,23 @@
             </div>
 
         </div>  <!-- End STATIC -->
+        
+        <!-- ANALYSIS HISTORY-->
+        <div class="tab-pane" id="nav-analysis" role="tabpanel" aria-labelledby="nav-analysis-tab">
+            {% for analysis in analysis_history %}
+                <div class="card my-2" id="card_analysis_{{ analysis.id }}">
+                    <div class="card-header">
+                        <h3 class="float-left">{{ analysis.cmd_line }}</h3>
+                        <div class="float-right">
+                            <button class="btn btn-danger my-1" onclick="delAnalysis('{{ analysis.id }}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ analysis.results }}
+                    </div>
+                </div>
+            {% endfor %}            
+        </div>
 
         <!-- NOTES -->
         <div class="tab-pane" id="nav-notes" role="tabpanel" aria-labelledby="nav-notes-tab">
@@ -529,6 +549,29 @@
                             console.log(data);
                             var obj = jQuery.parseJSON(data["responseText"]);
                             alert("Note: " + obj.title[0]);
+                        }
+                    }
+                )
+            }
+        }
+
+        var malware_analysis_list_url = "{% url 'viperapi_v3:malware-analysis-list' project_name=project malware_sha256=malware.sha256 %}";
+        function delAnalysis(analysis_id) {
+            console.log("del_analysis called for: " + analysis_id);
+
+            if (confirm('Are you sure you want to delete this analysis?')) {
+                $.ajax({
+                        url: malware_analysis_list_url + analysis_id + '/',
+                        type: "DELETE",
+                        success: function (data, textStatus, jqXHR) {
+                            console.log("deleted");
+                            $('#card_analysis_' + analysis_id).hide();
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.log("error");
+                            console.log(data);
+                            var obj = jQuery.parseJSON(data["responseText"]);
+                            alert("Analysis: " + obj.title[0]);
                         }
                     }
                 )
