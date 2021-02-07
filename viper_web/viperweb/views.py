@@ -418,9 +418,15 @@ class FileView(LoginRequiredMixin, TemplateView):
 
         analysis_history = []
         analysis_list = malware_obj.analysis
+        analysis_list = sorted(analysis_list, key=analysis_sorter)
         if analysis_list:
             for item in analysis_list:
-                analysis_history.append({'id': item.id, 'cmd_line': item.cmd_line, 'results': item.results})
+                # (Alex) code stolen from RunModuleView below. 
+                results = print_output(json.loads(item.results))
+                results_formatted = '<p class="text-success">Result stored at {}</p>'.format(item.stored_at)
+                results_formatted += str(parse_text(results))
+                results_formatted = '<pre class="analysis_output">{0}</pre>'.format(results_formatted)
+                analysis_history.append({'id': item.id, 'cmd_line': item.cmd_line, 'results': results_formatted})
 
         module_history = []
         analysis_list = malware_obj.analysis
@@ -792,3 +798,7 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
                                                    'searched_key': key,
                                                    'searched_value': value,
                                                    'projects': get_project_list()})
+
+# TODO(Alex): move this into utils file, along with any other code to reduce these size of this file.
+def analysis_sorter(analysis):
+    return analysis.cmd_line

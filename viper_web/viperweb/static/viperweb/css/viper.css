@@ -122,3 +122,15 @@ fieldset[disabled] .btn-viper.active {
   color: #2A282B;
   background-color: #ffffff;
 }
+
+.analysis_output {
+  line-height: 1.25;
+  margin-bottom: 0;
+}
+
+/* Addresses the output of the 'strings' command, which uses one paragraph element per string.
+  This will reduce the padding between subsequent paragraph elements.
+*/
+p ~ p {
+  margin-bottom: 0.25rem;
+}

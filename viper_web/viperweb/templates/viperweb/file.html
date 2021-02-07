@@ -206,17 +206,19 @@
         </div>  <!-- End STATIC -->
         
         <!-- ANALYSIS HISTORY-->
+        <!-- TODO(Alex): Refresh this when modules are run in the Module tab-->
+        <!-- TODO(Alex): Possibly add a collapse/expand all. Ideal place would be in #fileTab, but that would show in other tabs.-->
         <div class="tab-pane" id="nav-analysis" role="tabpanel" aria-labelledby="nav-analysis-tab">
             {% for analysis in analysis_history %}
                 <div class="card my-2" id="card_analysis_{{ analysis.id }}">
-                    <div class="card-header">
+                    <div class="card-header" onclick="toggleAnalysis('{{ analysis.id }}')">
                         <h3 class="float-left">{{ analysis.cmd_line }}</h3>
                         <div class="float-right">
                             <button class="btn btn-danger my-1" onclick="delAnalysis('{{ analysis.id }}')">Delete</button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        {{ analysis.results }}
+                    <div class="card-body" id="card_analysis_body_{{ analysis.id }}">
+                        {{ analysis.results|safe }}
                     </div>
                 </div>
             {% endfor %}            
@@ -329,10 +331,11 @@
 
                 <label for="module_history" hidden></label>
                 <select id="module_history" class="form-control mr-2" name="moduleHistory">
-                    <option value=" ">Module History</option>
+                    <option value=" " selected disabled>Module History</option>
                     {% for cmd in module_history %}
                         <option value="{{ cmd.id }}">{{ cmd.cmd_line }}</option>
                     {% endfor %}
+                    
                 </select>
                 <button type="submit" class="btn btn-primary" name="submit">Run</button>
                 <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
@@ -380,7 +383,7 @@
 
 
 {% block js %}
-
+    <!-- TODO(Alex): move this to a dedicated script file-->
     <script type='text/javascript'>
         {#    TODO(frennkie) debug output #}
         // Javascript to enable link to tab
@@ -576,6 +579,9 @@
                     }
                 )
             }
+        }
+        function toggleAnalysis(analysis_id) {
+            $('#card_analysis_body_' + analysis_id).toggle();
         }
 
         // Sample Info tab - fuzzy:
