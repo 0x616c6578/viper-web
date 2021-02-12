@@ -44,15 +44,17 @@ from .serializers import PassSerializer
 from .serializers import MalwareDownloadSerializer, MalwareUploadSerializer
 
 # Viper imports
-from viper.core.plugins import __modules__
-from viper.core.project import __project__
-from viper.core.project import get_project_list
-from viper.common.objects import File
 from viper.common.autorun import autorun_module
-from viper.core.storage import store_sample, get_sample_path
-from viper.core.database import Database, Malware, Tag, Note, Analysis
+from viper.common.objects import File
 from viper.core.archiver import Compressor, Extractor
 from viper.core.config import __config__
+from viper.core.database import Database, Malware, Tag, Note, Analysis
+from viper.core.plugins import __modules__
+from viper.core.project import __project__, get_project_list
+from viper.core.session import __sessions__
+from viper.core.storage import store_sample, get_sample_path
+from viper.core.ui.cmd.store import Store
+
 
 try:
     from scandir import walk  # noqa
@@ -356,26 +358,10 @@ class MalwareViewSet(ViperGenericViewSet):
         """_process_uploaded add one uploaded file to database and to storage then remove uploaded file"""
         log.debug("adding: {} as {}".format(uploaded_file_path, file_name))
         malware = File(uploaded_file_path)
-        malware.name = file_name
+        __sessions__.new(uploaded_file_path)
 
-        if get_sample_path(malware.sha256):
-            error = {"error": {"code": "DuplicateFileHash",
-                               "message": "File hash exists already: {} (sha256: {})".format(malware.name, malware.sha256)}}
-            log.error("adding failed: {}".format(error))
-            raise ValidationError(detail=error)  # TODO(frennkie) raise more specific error?! so that we can catch it..?!
-        # Try to store file object into database
-        if db.add(obj=malware, tags=tag_list):
-            # If succeeds, store also in the local repository.
-            # If something fails in the database (for example unicode strings)
-            # we don't want to have the binary lying in the repository with no
-            # associated database record.
-            malware_stored_path = store_sample(malware)
-
-            # run autoruns on the stored sample
-            if cfg.get('autorun').enabled:
-                autorun_module(malware.sha256)
-
-            log.debug("added file \"{0}\" to {1}".format(malware.name, malware_stored_path))
+        if not Store().run():
+            db.rename_malware(malware.sha256, file_name)
 
             if note_body and note_title:
                 db.add_note(malware.sha256, note_title, note_body)
@@ -391,7 +377,6 @@ class MalwareViewSet(ViperGenericViewSet):
 
                 db.add_parent(malware.sha256, parent_hash)
                 log.debug("added parent: {}".format(parent_hash))
-
         else:
             error = {"error": {"code": "DatabaseAddFailed",
                                "message": "Adding File to Database failed: {} (sha256: {})".format(malware.name, malware.sha256)}}
@@ -405,6 +390,7 @@ class MalwareViewSet(ViperGenericViewSet):
             log.error("failed to delete temporary file: {}".format(err))
 
         return malware
+
 
     # TODO(frennkie) - this needs testing and cleaning up!
     @get_project_open_db()
@@ -800,75 +786,3 @@ def test_authenticated(request):
     if request.method == 'POST':
         return Response({"message": "Got some data! (Authentication validated successfully)", "data": request.data})
     return Response({"message": "Hello {}! (Authentication validated successfully)".format(request.user)})
-
-# TODO(frennkie) check whether and how to run modules
-
-#
-# @route('/modules/run', method='POST')
-# def run_module():
-#     project = request.forms.get('project')
-#     sha256 = request.forms.get('sha256')
-#     cmd_line = request.forms.get('cmdline')
-#
-#     if project:
-#         __project__.open(project)
-#     else:
-#         __project__.open('../')
-#
-#     if sha256:
-#         file_path = get_sample_path(sha256)
-#         if file_path:
-#             __sessions__.new(file_path)
-#
-#     if not cmd_line:
-#         response.code = 404
-#         return {'message': 'Invalid command line'}
-#
-#     results = module_cmdline(cmd_line, sha256)
-#     __sessions__.close()
-#
-#     return {"results": results}
-#
-#
-# def module_cmdline(cmd_line, sha256):
-#     # TODO: refactor this function, it has some ugly code.
-#     command_outputs = []
-#     cmd = Commands()
-#     split_commands = cmd_line.split(';')
-#     for split_command in split_commands:
-#         split_command = split_command.strip()
-#         if not split_command:
-#             continue
-#         args = []
-#         # Split words by white space.
-#         words = split_command.split()
-#         # First word is the root command.
-#         root = words[0]
-#         # If there are more words, populate the arguments list.
-#         if len(words) > 1:
-#             args = words[1:]
-#         try:
-#             if root in cmd.commands:
-#                 cmd.commands[root]['obj'](*args)
-#                 if cmd.output:
-#                     command_outputs += cmd.output
-#                 del(cmd.output[:])
-#             elif root in __modules__:
-#                 # if prev commands did not open a session open one
-#                 # on the current file
-#                 if sha256:
-#                     path = get_sample_path(sha256)
-#                     __sessions__.new(path)
-#                 module = __modules__[root]['obj']()
-#                 module.set_commandline(args)
-#                 module.run()
-#
-#                 command_outputs += module.output
-#                 print(type(module.output))
-#                 del(module.output[:])
-#             else:
-#                 command_outputs.append({'message': '{0} is not a valid command'.format(cmd_line)})
-#         except:
-#             command_outputs.append({'message': 'Unable to complete the command: {0}'.format(cmd_line)})
-#     __sessions__.close()
-#     return command_outputs
