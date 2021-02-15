@@ -29,7 +29,7 @@ from django.core.files.temp import NamedTemporaryFile
 
 # Viper imports
 from viper.common import network
-from viper.common.autorun import autorun_module
+# from viper.common.autorun import autorun_module
 from viper.common.objects import File
 from viper.common.version import __version__
 from viper.core.archiver import Extractor
@@ -277,10 +277,10 @@ def add_file(file_path, name=None, tags=None, parent=None):
         db.add(obj=obj, name=name, tags=tags, parent_sha=parent)
 
         # AutoRun Modules
-        if cfg.autorun.enabled:
-            autorun_module(obj.sha256)
-            # Close the open session to keep the session table clean
-            __sessions__.close()
+        # if cfg.autorun.enabled:
+        #     autorun_module(obj.sha256)
+        #     # Close the open session to keep the session table clean
+        #     __sessions__.close()
         return obj.sha256
 
     else:
