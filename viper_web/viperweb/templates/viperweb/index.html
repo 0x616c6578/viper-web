@@ -115,67 +115,6 @@
                         </form>
 
                     </div>
-
-                    <!-- Download from URL -->
-                    <div class="tab-pane" id="nav-download-url" role="tabpanel" aria-labelledby="nav-download-url-tab">
-
-                        <form id="download_form" role="form" enctype="multipart/form-data" action="{% url "url-download" %}" method="post">
-                            <div class="form-row align-items-center">
-                                <div class="col-4">
-                                    <input type="search" class="form-control" name="url" id="url" placeholder="URL - e.g. http://host.example.com/foo/bar/file.html">
-                                </div>
-
-                                <div class="col-4">
-                                    <input id="tag_list_url_dl" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
-                                </div>
-
-                                <div class="col-2">
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input" type="checkbox" id="TorCheckbox" name="tor" value="tor">
-                                        <label class="form-check-label" for="TorCheckbox">Use Tor</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-2">
-                                    <button type="submit" class="btn btn-primary">Download</button>
-                                </div>
-
-                                <input type="hidden" name="project" value="{{ project }}"/>
-
-                                {% csrf_token %}
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can not test it -->
-                    <div class="tab-pane fade" id="nav-download-vt" role="tabpanel" aria-labelledby="nav-download-vt-tab">
-
-                        <form id="virustotal_form" role="form" enctype="multipart/form-data" action="{% url "vt-download" %}" method="post">
-                            <div class="form-row align-items-center">
-                                <div class="col-4">
-                                    <label class="sr-only" for="hash">HASH</label>
-                                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="Virustotal Hash">
-                                </div>
-
-                                <div class="col-4">
-                                    <label for="tag_list_vt_dl" hidden></label>
-                                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
-                                </div>
-
-                                <div class="col-2"></div>
-
-                                <div class="col-2">
-                                    <button type="submit" class="btn btn-primary">Download</button>
-                                </div>
-
-                                <input type="hidden" name="project" value="{{ project }}"/>
-
-                                {% csrf_token %}
-                            </div>
-                        </form>
-
-                    </div>
-
                 </div>
             </div>
         </div>

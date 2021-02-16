@@ -381,7 +381,7 @@ class MalwareViewSet(ViperGenericViewSet):
             error = {"error": {"code": "DatabaseAddFailed",
                                "message": "Adding File to Database failed: {} (sha256: {})".format(malware.name, malware.sha256)}}
             log.error("adding failed: {}".format(error))
-            #raise ValidationError(detail=error)
+            raise ValidationError(detail=error)
 
         # clean up
         try:
