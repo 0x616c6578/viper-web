@@ -29,7 +29,6 @@ from django.core.files.temp import NamedTemporaryFile
 
 # Viper imports
 from viper.common import network
-from viper.common.autorun import autorun_module
 from viper.common.objects import File
 from viper.common.version import __version__
 from viper.core.archiver import Extractor
@@ -262,32 +261,6 @@ def module_cmdline(project=None, cmd_line=None, file_hash=None):
     return html
 
 
-def add_file(file_path, name=None, tags=None, parent=None):
-    obj = File(file_path)
-    new_path = store_sample(obj)
-    print(new_path)
-
-    if not name:
-        name = os.path.basename(file_path)
-
-    # success = True
-    if new_path:
-        # Add file to the database.
-        db = Database()
-        db.add(obj=obj, name=name, tags=tags, parent_sha=parent)
-
-        # AutoRun Modules
-        if cfg.autorun.enabled:
-            autorun_module(obj.sha256)
-            # Close the open session to keep the session table clean
-            __sessions__.close()
-        return obj.sha256
-
-    else:
-        # ToDo Remove the stored file if we cant write to DB
-        return
-
-
 ##
 # Class Based Views
 ##
@@ -309,77 +282,6 @@ class MainPageView(LoginRequiredMixin, TemplateView):
                                                'extractors': Extractor().extractors,
                                                'project': project,
                                                'projects': get_project_list()})
-
-
-class UrlDownloadView(LoginRequiredMixin, TemplateView):
-    """Download a file from URL and add to project"""
-    def get(self, request, *args, **kwargs):
-        return HttpResponse('This is a POST only view')
-
-    def post(self, request, *args, **kwargs):
-        # Set Project
-        project = request.POST.get('project', 'default')
-        open_db(project)
-
-        url = request.POST.get('url')
-        tags = request.POST.get('tag_list')
-        tags = "url," + tags
-
-        if request.POST.get('tor'):
-            downloaded_file = network.download(url, tor=True)
-        else:
-            downloaded_file = network.download(url, tor=False)
-
-        if downloaded_file is None:
-            messages.error(request, "server can't download from URL")
-            return redirect(reverse("main-page-project", kwargs={"project": project}))
-
-        tf = NamedTemporaryFile()
-        tf.write(downloaded_file)
-
-        if not tf:
-            messages.error(request, "server can't download from URL")
-            return redirect(reverse("main-page-project", kwargs={"project": project}))
-        tf.flush()
-
-        sha_256 = add_file(tf.name, name=url.split('/')[-1], tags=tags)
-        if sha_256:
-            messages.success(request, "stored file in database: {}".format(tf.name))
-            return redirect(reverse('main-page-project', kwargs={'project': project}))
-        else:
-            messages.error(request, "Unable to Store The File, already in database")
-            return redirect(reverse("main-page-project", kwargs={"project": project}))
-
-
-class VtDownloadView(LoginRequiredMixin, TemplateView):
-    """Download a file from Virustotal and add to project"""
-    def get(self, request, *args, **kwargs):
-        return HttpResponse('This is a POST only view')
-
-    # VirusTotal Download
-    # TODO(frennkie) this most likely doesn't work
-    #   virustotal -d does not take a parameter - so providing a vt_hash will fail
-    #   virustotal --search <vt_hash> -d would make sense but requires a API key for the
-    #   private VT API (which I don't have)
-
-    def post(self, request, *args, **kwargs):
-        # Set Project
-        project = request.POST.get('project', 'default')
-        open_db(project)
-
-        vt_hash = request.POST.get('vt_hash')
-        tags = request.POST.get('tag_list')
-        cmd_line = 'virustotal --search {0} -d; store'.format(vt_hash)
-        if len(tags) > 0:
-            cmd_line += '; tags -a {0}'.format(tags)
-
-        module_results = module_cmdline(project=project, file_hash=False, cmd_line=cmd_line)
-
-        if 'Stored' in module_results:
-            return redirect(reverse("main-page-project", kwargs={"project": project}))
-        else:
-            messages.error(request, "Unable to download file {0}".format(module_results))
-            return redirect(reverse("main-page-project", kwargs={"project": project}))
 
 
 # File View
