@@ -360,7 +360,7 @@ class MalwareViewSet(ViperGenericViewSet):
         malware = File(uploaded_file_path)
         __sessions__.new(uploaded_file_path)
 
-        if not Store().run():
+        if Store().run():
             db.rename_malware(malware.sha256, file_name)
 
             if note_body and note_title:
@@ -381,7 +381,7 @@ class MalwareViewSet(ViperGenericViewSet):
             error = {"error": {"code": "DatabaseAddFailed",
                                "message": "Adding File to Database failed: {} (sha256: {})".format(malware.name, malware.sha256)}}
             log.error("adding failed: {}".format(error))
-            raise ValidationError(detail=error)
+            #raise ValidationError(detail=error)
 
         # clean up
         try:
